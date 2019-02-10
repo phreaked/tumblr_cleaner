@@ -28,8 +28,6 @@ class Tumblr:
 
 	def set_username(self, username):
 		self.username = username
-		self.og_parent = ["", self.username]
-		self.og_source = [self.username]
 
 	def all_blogs(self):
 		self.m.open("https://www.tumblr.com/settings/account")
@@ -68,15 +66,10 @@ class Tumblr:
 		key_html = str(key_html[0]).strip().split("'")
 		self.key = key_html[1]
 
-	def get_posts(self):
-		self.m.open("https://tumblr.com/{}/{}".format(self.username, self.pages))
-		blog_html = self.m.response().read()
-		self.pages -= 1
-
 	def delete_posts(self):
 		ids = self.posts[0:100]
 		[self.posts.remove(i) for i in ids]
-		ids = "%2C".join(ids)
+		ids = ",".join(ids)
 		data = "post_ids={}&form_key={}".format(ids, self.key)
 		self.m.open("https://www.tumblr.com/delete_posts", data)
 
@@ -91,36 +84,34 @@ class Tumblr:
 
 	def get_posts(self):
 		self.m.open("http://tumblr.com/blog/{}/{}".format(self.username, self.pages))
-		self.pages -= 1
 		html_source = self.m.response().read()
 		tree = html.fromstring(html_source)
 		self.conts = tree.find_class("with_permalink")
+		self.permalinks = [cont.find_class("post_permalink") for cont in self.conts]
+		self.pages -= 1
+
+	def add_id(self, id_number):
+		try:
+			self.posts += [str(self.strip_perma(self.permalinks[id_number][0].xpath("@href")[0]))]
+		except:
+			pass
 
 	def keep_original(self):
 		parents = [cont.find_class("post_info_fence") for cont in self.conts]
-		sources = [cont.find_class("post-source-link") for cont in self.conts]
-		permalinks = [cont.find_class("post_permalink") for cont in self.conts]
 		for i in range(len(self.conts)):
 			if len(parents[i]) > 0:
-				parent_info = parents[i][0].text_content().replace("\n","").replace(" ","").split("reblogged")
-				parent = parent_info[1]
-			else:
-				parent = ""
-			if parent not in self.og_parent:
-				if len(sources[i]) > 0:
-					source = sources[i][0].text_content().replace("\n","").replace(" ","")
-				else:
-					source = ""
-				if source not in self.og_source:
-					try:
-						self.posts += [str(self.strip_perma(permalinks[i][0].xpath("@href")[0]))]
-					except:
-						pass
+				self.add_id(i)
 
-	def delete_all(self):
-		permalinks = [cont.find_class("post_permalink") for cont in self.conts]
+	def keep_relevant(self):
 		for i in range(len(self.conts)):
-			try:
-				self.posts += [str(self.strip_perma(permalinks[i][0].xpath("@href")[0]))]
-			except:
-				pass
+			post_text = self.conts[i].text_content().splitlines()
+			post_parent = post_text[1]
+			del post_text[1]
+			post_text = "".join(post_text)
+			if "reblogged" in post_parent:
+				if self.username not in post_text:
+					self.add_id(i)
+				
+	def delete_all(self):
+		for i in range(len(self.conts)):
+			self.add_id(i)
