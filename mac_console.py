@@ -4,7 +4,7 @@ from sys import stdout
 from math import floor
 
 def clear():
-	system("cls")
+	system("clear")
 
 class Main:
 	def __init__(self):
@@ -17,7 +17,21 @@ class Main:
 
 	def v(self):
 		clear()
-		print("+-------------------+--------------------+\n| TumblrCleaner 1.0 | [ctrl + c] to quit |\n+-------------------+--------------------+\n")
+		print("+-------------------+---------------+\n| TumblrCleaner 1.0 | Close to quit |\n+-------------------+---------------+\n")
+
+	def login_error(self):
+		self.v()
+		print(self.login_error_message)
+
+	def major_error(self):
+		self.v()
+		print(self.major_error_message)
+		self.quit()
+
+	def logged_out_error(self):
+		self.v()
+		print(self.logged_out_error_message)
+		self.quit()
 
 	def tumblr(self):
 		self.v()
@@ -29,12 +43,9 @@ class Main:
 				if self.t.login(self.email, self.password):
 					break
 				else:
-					self.v()
-					print(self.login_error)
+					self.login_error()
 			except:
-				self.v()
-				print(self.major_error)
-				self.quit()
+				self.major_error()
 		self.blogs()
 	
 	def blogs(self):
@@ -52,7 +63,7 @@ class Main:
 				self.t.set_username(self.t.blogs[int(username)])
 				break
 			except:
-				print(self.invalid_error)
+				print(self.invalid_error_message)
 		self.stats()
 
 	def stats(self):
@@ -64,11 +75,9 @@ class Main:
 		except:
 			self.v()
 			if self.t.logged_in == False:
-				print(self.logged_out_error)
-				quit()
+				self.logged_out_error()
 			else:
-				print(self.major_error)
-				quit()
+				self.major_error()
 		self.v()
 		print("[{}] {} posts".format(self.t.username, self.t.post_count))
 		self.clean()
@@ -86,7 +95,7 @@ class Main:
 				self.option_message = "Deleting all"
 				break
 			else:
-				print(self.invalid_error)
+				print(self.invalid_error_message)
 		self.delete()
 
 	def delete(self):
@@ -98,19 +107,15 @@ class Main:
 			except:
 				self.v()
 				if self.t.logged_in == False:
-					print(self.logged_out_error)
-					quit()
+					self.logged_out_error()
 				else:
-					print(self.major_error)
-					quit()
+					self.major_error()
 			self.clean_func()
 			if len(self.t.posts) > 100 or self.t.pages == 0:
 				try:
 					self.t.delete_posts()
 				except:
-					self.v()
-					print(self.major_error)
-					self.quit()
+					self.major_error()
 			progress = (self.pages - self.t.pages)/(self.pages/100)
 			percent = "[{}%] complete".format(int(floor(progress)))
 			digits = len(percent)
@@ -124,7 +129,7 @@ class Main:
 		self.quit()
 
 	def quit(self):
-		input("Type enter to quit")
-		exit()
+		while True:
+			input("Close the console to quit")
 
 cleaner = Main()

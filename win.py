@@ -3,8 +3,6 @@ from tumblr import Tumblr
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-from threading import Thread
-from time import sleep
 
 class UITumblrLogin(QWidget):
 	def __init__(self, parent=None):
