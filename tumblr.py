@@ -20,12 +20,6 @@ class Tumblr:
 			login = True
 		return login
 
-	def logged_in(self):
-		active = True
-		if "tumblr.com/login" in self.m.geturl():
-			active = False
-		return active
-
 	def set_username(self, username):
 		self.username = username
 
