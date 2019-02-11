@@ -57,7 +57,7 @@ class Tumblr:
 		self.m.open("https://www.tumblr.com/mega-editor/{}".format(self.username))
 		key_html = self.m.response().read().splitlines()
 		key_html = [line for line in key_html if "form_key" in str(line)]
-		key_html = str(key_html[0]).strip().split("'")
+		key_html = str(key_html[0]).split("'")
 		self.key = key_html[1]
 
 	def delete_posts(self):
@@ -105,7 +105,7 @@ class Tumblr:
 			if "reblogged" in post_parent:
 				if self.username not in post_text:
 					self.add_id(i)
-				
+
 	def delete_all(self):
 		for i in range(len(self.conts)):
 			self.add_id(i)

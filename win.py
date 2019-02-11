@@ -43,6 +43,7 @@ class UIBlogStats(QWidget):
 		self.info_label = QLabel(self)
 		self.info_label.setText("{}: {} posts".format(username, post_count))
 		self.info_label.move(20,20)
+		self.info_label.resize(250,20)
 		self.progress = QProgressBar(self)
 		self.progress.setGeometry(20, 40, 250, 30)
 		self.progress.setValue(0)
@@ -89,7 +90,7 @@ class loginThread(QThread):
 			login = self.t_.login(self.email, self.password)
 			self.t_.all_blogs()
 		except:
-			login = 0
+			login = False
 		self.signal.emit(login)
 
 class cleanThread(QThread):
@@ -116,25 +117,24 @@ class MainWindow(QMainWindow):
 		self.main_title = "TumblrCleaner 1.0"
 		self.loading_title = "Loading..."
 		self.setWindowTitle(self.main_title)
-		self.setWindowIcon(QIcon("icon.ico"))
 		self.t = Tumblr()
 		self.startTumblrLogin()
 
 	def login_error(self):
-		self.login_error_title = "Login Error"
-		self.login_error_message = "Invalid login. More than two attempts will trigger captcha. Make sure to disable 2-step authenitcaton."
-		QMessageBox.about(self, self.login_error_title, self.login_error_message)
+		login_error_title = "Login Error"
+		login_error_message = "Invalid login. More than two attempts will trigger captcha. Make sure to disable 2-step authenitcaton."
+		QMessageBox.information(self, login_error_title, login_error_message)
 
 	def major_error(self):
-		self.major_error_title = "Tumblr Error"
-		self.major_error_message = "Something went wrong. Reopen the application and try again."
-		QMessageBox.about(self, self.major_error_title, self.major_error_message)
+		major_error_title = "Error"
+		major_error_message = "Something went wrong. Reopen the application and try again."
+		QMessageBox.critical(self, major_error_title, major_error_message)
 		self.quit()
 
 	def done(self):
-		self.done_title = "All Done"
-		self.done_message = "The posts have been deleted."
-		QMessageBox.about(self, self.done_title, self.done_message)
+		done_title = "All Done"
+		done_message = "The posts have been deleted."
+		QMessageBox.information(self, done_title, done_message)
 		self.quit()
 	
 	def startTumblrLogin(self):
@@ -155,9 +155,9 @@ class MainWindow(QMainWindow):
 		self.show()
 
 	def startBlogStats(self):
+		self.setGeometry(200,200,290,170)
 		self.BlogStats = UIBlogStats(self.t.username, self.t.post_count, self)
 		self.setCentralWidget(self.BlogStats)
-		self.setGeometry(200,200,290,170)
 		self.clean_thread = cleanThread(self.t)
 		self.clean_thread.signal.connect(self.clean_done)
 		self.BlogStats.quit_btn.clicked.connect(self.quit)
@@ -179,8 +179,6 @@ class MainWindow(QMainWindow):
 		self.setWindowTitle(self.main_title)
 		if login:
 			self.startListBlogs()
-		elif login == 0:
-			self.major_error()
 		else:
 			self.login_error()
 			self.TumblrLogin.email_txt.setDisabled(False)
@@ -220,7 +218,7 @@ class MainWindow(QMainWindow):
 		self.BlogStats.original_btn.setDisabled(True)
 		self.BlogStats.relevant_btn.setDisabled(True)
 		self.BlogStats.delete_btn.setDisabled(True)
-		self.setWindowTitle(self.clean_title)
+		self.BlogStats.info_label.setText("[{}:{}] {} posts".format(self.t.username, self.t.post_count, self.clean_title))
 		self.clean()
 
 	def clean(self):
@@ -231,7 +229,6 @@ class MainWindow(QMainWindow):
 			progress_bar = (self.pages - self.t.pages)/(self.pages/100)
 			self.BlogStats.progress.setValue(progress_bar)
 			if self.t.pages == 0:
-				self.setWindowTitle(self.main_title)
 				self.done()
 			else:
 				self.clean()

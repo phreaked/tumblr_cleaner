@@ -125,4 +125,4 @@ class Main:
 		input("Type enter to quit")
 		exit()
 
-cleaner = Main()
+_ = Main()

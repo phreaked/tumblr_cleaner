@@ -43,67 +43,105 @@ class UIBlogStats(QWidget):
 		self.info_label = QLabel(self)
 		self.info_label.setText("{}: {} posts".format(username, post_count))
 		self.info_label.move(20,20)
+		self.info_label.resize(260,20)
 		self.progress = QProgressBar(self)
-		self.progress.setGeometry(20, 50, 320, 10)
+		self.progress.setGeometry(20, 50, 260, 10)
 		self.progress.setValue(0)
-		self.clean_btn = QPushButton("Keep Orginal", self)
-		self.clean_btn.move(15,70)
-		self.clean_btn.resize(110,30)
-		self.delete_btn = QPushButton("Delete All", self)
-		self.delete_btn.move(125,70)
-		self.delete_btn.resize(110,30)
+		self.original_btn = QPushButton("Keep orginal", self)
+		self.original_btn.move(15,70)
+		self.original_btn.resize(140,30)
+		self.relevant_btn = QPushButton("Keep relevant", self)
+		self.relevant_btn.move(150,70)
+		self.relevant_btn.resize(140,30)
+		self.delete_btn = QPushButton("Delete all", self)
+		self.delete_btn.move(15,100)
+		self.delete_btn.resize(140,30)
 		self.quit_btn = QPushButton("Quit", self)
-		self.quit_btn.move(235,70)
-		self.quit_btn.resize(110,30)
+		self.quit_btn.move(150,100)
+		self.quit_btn.resize(140,30)
 		self.show()
 
-class UIMessage(QWidget):
-	def __init__(self, message_text, parent=None):
-		super(UIMessage, self).__init__(parent)
-		self.message_label = QLabel(self)
-		self.message_label.move(20,20)
-		self.message_label.setText(str(message_text))
-		self.show()
+class statsThread(QThread): 
+	signal = pyqtSignal("PyQt_PyObject")
+	def __init__(self, tumblr):
+		QThread.__init__(self)
+		self.t_ = tumblr
+		self.username = ""
+
+	def run(self):
+		self.t_.set_username(self.username)
+		try:
+			pages = self.t_.all_pages()
+			self.t_.form_key()
+		except:
+			pages = ""
+		self.signal.emit(pages)
+
+class loginThread(QThread):
+	signal = pyqtSignal("PyQt_PyObject")
+	def __init__(self, tumblr):
+		QThread.__init__(self)
+		self.t_ = tumblr
+		self.email = ""
+		self.password = ""
+
+	def run(self):
+		try:
+			login = self.t_.login(self.email, self.password)
+			self.t_.all_blogs()
+		except:
+			login = False
+		self.signal.emit(login)
+
+class cleanThread(QThread):
+	signal = pyqtSignal("PyQt_PyObject")
+	def __init__(self, tumblr):
+		QThread.__init__(self)
+		self.t_ = tumblr
+		self.cleaner = ""
+
+	def run(self):
+		deleted = True
+		try:
+			self.t_.get_posts()
+			self.cleaner()
+			if len(self.t_.posts) > 100 or self.t_.pages == 0:
+				self.t_.delete_posts()
+		except:
+			deleted = False
+		self.signal.emit(deleted)
 
 class MainWindow(QMainWindow):
 	def __init__(self, parent=None):
 		super(MainWindow, self).__init__(parent)
 		self.main_title = "TumblrCleaner 1.0"
 		self.setWindowTitle(self.main_title)
-		self.setWindowIcon(QIcon("icon.ico"))
 		self.t = Tumblr()
 		self.startTumblrLogin()
 
-	def login_error_message(self):
-		self.login_error_title = "Login Error"
-		self.login_error = "Invalid login. More than two attempts will trigger captcha. Make sure to disable 2-step authenitcaton."
-		QMessageBox.about(self, self.login_error_title, self.login_error)
+	def login_error(self):
+		login_error_title = "Login Error"
+		login_error_message = "Invalid login. More than two attempts will trigger captcha. Make sure to disable 2-step authenitcaton."
+		QMessageBox.information(self, login_error_title, login_error_message)
 
-	def logged_out_message(self):
-		self.setGeometry(200,200,275,75)
-		self.logged_out_text = "You were logged out.\nReopen the application and try again."
-		self.logged_out = UIMessage(self.logged_out_text, self)
-		self.setCentralWidget(self.logged_out)
-		self.show()
+	def major_error(self):
+		major_error_title = "Error"
+		major_error_message = "Something went wrong. Reopen the application and try again."
+		QMessageBox.critical(self, major_error_title, major_error_message)
+		self.quit()
 
-	def major_error_message(self):
-		self.setGeometry(200,200,275,75)
-		self.major_error_text = "Something went wrong.\nReopen the application and try again."
-		self.major_error = UIMessage(self.major_error_text, self)
-		self.setCentralWidget(self.major_error)
-		self.show()
-
-	def done_message(self):
-		self.setGeometry(200,200,230,60)
-		self.done_text = "The posts have been deleted."
-		self.done_ = UIMessage(self.done_text, self)
-		self.setCentralWidget(self.done_)
-		self.show()
+	def done(self):
+		done_title = "All Done"
+		done_message = "The posts have been deleted."
+		QMessageBox.information(self, done_title, done_message)
+		self.quit()
 
 	def startTumblrLogin(self):
 		self.setGeometry(200,200,280,170)
 		self.TumblrLogin = UITumblrLogin(self)
 		self.setCentralWidget(self.TumblrLogin)
+		self.tumblr_login_thread = loginThread(self.t)
+		self.tumblr_login_thread.signal.connect(self.tumblr_login_done)
 		self.TumblrLogin.login_btn.clicked.connect(self.tumblr_login)
 		self.show()
 
@@ -111,15 +149,20 @@ class MainWindow(QMainWindow):
 		self.setGeometry(200,200,280,190)
 		self.ListBlogs = UIListBlogs(self.t.blogs, self)
 		self.setCentralWidget(self.ListBlogs)
-		self.ListBlogs.usernames.itemClicked.connect(lambda: self.blog_stats(self.ListBlogs.usernames.currentItem().text()))
+		self.blog_stats_thread = statsThread(self.t)
+		self.blog_stats_thread.signal.connect(self.blog_stats_done)
+		self.ListBlogs.usernames.itemClicked.connect(self.blog_stats)
 		self.show()
 
 	def startBlogStats(self):
+		self.setGeometry(200,200,300,140)
 		self.BlogStats = UIBlogStats(self.t.username, self.t.post_count, self)
 		self.setCentralWidget(self.BlogStats)
-		self.BlogStats.quit_btn.clicked.connect(self.quit_app)
-		self.setGeometry(200,200,360,110)
-		self.BlogStats.clean_btn.clicked.connect(self.keep_original_posts)
+		self.clean_thread = cleanThread(self.t)
+		self.clean_thread.signal.connect(self.clean_done)
+		self.BlogStats.quit_btn.clicked.connect(self.quit)
+		self.BlogStats.original_btn.clicked.connect(self.keep_original_posts)
+		self.BlogStats.relevant_btn.clicked.connect(self.keep_relevant_posts)
 		self.BlogStats.delete_btn.clicked.connect(self.delete_all_posts)
 		self.show()
 
@@ -127,63 +170,68 @@ class MainWindow(QMainWindow):
 		self.TumblrLogin.email_txt.setDisabled(True)
 		self.TumblrLogin.password_txt.setDisabled(True)
 		self.TumblrLogin.login_btn.setDisabled(True)
-		try:
-			if self.t.login(self.TumblrLogin.email_txt.text(), self.TumblrLogin.password_txt.text()):
-				self.t.all_blogs()
-				self.startListBlogs()
-			else:
-				self.login_error_message()
-				self.TumblrLogin.email_txt.setDisabled(False)
-				self.TumblrLogin.password_txt.setDisabled(False)
-				self.TumblrLogin.login_btn.setDisabled(False)
-		except:
-			self.major_error_message()
+		self.tumblr_login_thread.email = self.TumblrLogin.email_txt.text()
+		self.tumblr_login_thread.password = self.TumblrLogin.password_txt.text()
+		self.tumblr_login_thread.start()
+
+	def tumblr_login_done(self, login):
+		if login:
+			self.startListBlogs()
+		else:
+			self.login_error()
+			self.TumblrLogin.email_txt.setDisabled(False)
+			self.TumblrLogin.password_txt.setDisabled(False)
+			self.TumblrLogin.login_btn.setDisabled(False)
 
 	def blog_stats(self, username):
 		self.ListBlogs.usernames.setDisabled(True)
-		self.t.set_username(username)
-		try:
-			self.pages = self.t.all_pages()
-			self.t.form_key()
-		except:
-			if self.t.logged_in == False:
-				self.logged_out_message()
-			else:
-				self.major_error_message()
-		self.ListBlogs.usernames.setDisabled(False)
-		self.startBlogStats()
+		self.blog_stats_thread.username = self.ListBlogs.usernames.currentItem().text()
+		self.blog_stats_thread.start()
+		
+	def blog_stats_done(self, pages):
+		if pages != "":
+			self.pages = pages
+			self.startBlogStats()
+		else:
+			self.major_error()
 
 	def keep_original_posts(self):
-		self.clean_func = self.t.keep_original
+		self.clean_thread.cleaner = self.t.keep_original
+		self.clean_title = "Keeping original"
+		self.start_clean()
+
+	def keep_relevant_posts(self):
+		self.clean_thread.cleaner = self.t.keep_relevant
+		self.clean_title = "Keeping relevant"
 		self.start_clean()
 	
 	def delete_all_posts(self):
-		self.clean_func = self.t.delete_all
+		self.clean_thread.cleaner = self.t.delete_all
+		self.clean_title = "Deleting all"
 		self.start_clean()
 
 	def start_clean(self):
+		self.BlogStats.original_btn.setDisabled(True)
+		self.BlogStats.relevant_btn.setDisabled(True)
 		self.BlogStats.delete_btn.setDisabled(True)
-		self.BlogStats.clean_btn.setDisabled(True)
-		while self.t.pages >= 1:
-			try:
-				self.t.get_posts()
-			except:
-				if self.t.logged_in == False:
-					self.logged_out_message()
-				else:
-					self.major_error_message()
-			self.clean_func()
-			if len(self.t.posts) > 100 or self.t.pages == 0:
-				try:
-					self.t.delete_posts()
-				except:
-					self.major_error_message()
-				progress_bar = (self.pages - self.t.pages)/(self.pages/100)
-				self.BlogStats.progress.setValue(progress_bar)
-				if self.t.pages == 0:
-					self.done_message()
+		self.BlogStats.info_label.setText("[{}:{}] {} posts".format(self.t.username, self.t.post_count, self.clean_title))
+		self.clean()
+
+	def clean(self):
+		self.clean_thread.start()
+
+	def clean_done(self, deleted):
+		if deleted:
+			progress_bar = (self.pages - self.t.pages)/(self.pages/100)
+			self.BlogStats.progress.setValue(progress_bar)
+			if self.t.pages == 0:
+				self.done()
+			else:
+				self.clean()
+		else:
+			self.major_error()
 	
-	def quit_app(self):
+	def quit(self):
 		sys.exit()
 
 def run():

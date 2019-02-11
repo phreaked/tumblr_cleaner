@@ -8,10 +8,6 @@ def clear():
 
 class Main:
 	def __init__(self):
-		self.major_error = "[!] Something went wrong. Reopen the Program and try again."
-		self.invalid_error = "[!] Invalid entry."
-		self.logged_out_error = "[!] You were logged out. Reopen the application and try again."
-		self.login_error = "[!] Invalid login. More than two attempts will trigger captcha. Make sure to disable 2-step authenitcaton."
 		self.t = Tumblr()
 		self.tumblr()
 
@@ -19,18 +15,19 @@ class Main:
 		clear()
 		print("+-------------------+---------------+\n| TumblrCleaner 1.0 | Close to quit |\n+-------------------+---------------+\n")
 
+	def invalid_error(self):
+		invalid_error_message = "[!] Invalid entry."
+		print(invalid_error_message)
+
 	def login_error(self):
 		self.v()
-		print(self.login_error_message)
+		login_error_message = "[!] Invalid login. More than two attempts will trigger captcha. Make sure to disable 2-step authenitcaton."
+		print(login_error_message)
 
 	def major_error(self):
 		self.v()
-		print(self.major_error_message)
-		self.quit()
-
-	def logged_out_error(self):
-		self.v()
-		print(self.logged_out_error_message)
+		major_error_message = "[!] Something went wrong. Reopen the Program and try again."
+		print(major_error_message)
 		self.quit()
 
 	def tumblr(self):
@@ -47,7 +44,7 @@ class Main:
 			except:
 				self.major_error()
 		self.blogs()
-	
+
 	def blogs(self):
 		self.v()
 		print("Login successful!")
@@ -63,7 +60,7 @@ class Main:
 				self.t.set_username(self.t.blogs[int(username)])
 				break
 			except:
-				print(self.invalid_error_message)
+				self.invalid_error()
 		self.stats()
 
 	def stats(self):
@@ -73,17 +70,13 @@ class Main:
 			self.pages = self.t.all_pages()
 			self.t.form_key()
 		except:
-			self.v()
-			if self.t.logged_in == False:
-				self.logged_out_error()
-			else:
-				self.major_error()
+			self.major_error()
 		self.v()
 		print("[{}] {} posts".format(self.t.username, self.t.post_count))
 		self.clean()
 
 	def clean(self):
-		print("\n[0] Keep original\n[1] Delete all\n")
+		print("\n[0] Keep original\n[1] Keep relevant\n[2] Delete all\n")
 		while True:
 			self.option = input("Select option: ")
 			if self.option in [0,"0"]:
@@ -91,11 +84,15 @@ class Main:
 				self.option_message = "Keeping original"
 				break
 			elif self.option in [1,"1"]:
+				self.clean_func = self.t.keep_relevant
+				self.option_message = "Keeping relevant"
+				break
+			elif self.option in [2,"2"]:
 				self.clean_func = self.t.delete_all
 				self.option_message = "Deleting all"
 				break
 			else:
-				print(self.invalid_error_message)
+				self.invalid_error()
 		self.delete()
 
 	def delete(self):
@@ -105,11 +102,7 @@ class Main:
 			try:
 				self.t.get_posts()
 			except:
-				self.v()
-				if self.t.logged_in == False:
-					self.logged_out_error()
-				else:
-					self.major_error()
+				self.major_error()
 			self.clean_func()
 			if len(self.t.posts) > 100 or self.t.pages == 0:
 				try:
@@ -132,4 +125,4 @@ class Main:
 		while True:
 			input("Close the console to quit")
 
-cleaner = Main()
+_ = Main()
