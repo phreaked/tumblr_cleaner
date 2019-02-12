@@ -21,7 +21,7 @@ class Main:
 
 	def login_error(self):
 		self.v()
-		login_error_message = "[!] Invalid login. More than two attempts will trigger captcha. Make sure to disable 2-step authenitcaton."
+		login_error_message = "[!] Invalid login. Beware of captcha and 2-step authentication. If you keep getting this error, login through your browser then restart the program.\n"
 		print(login_error_message)
 
 	def major_error(self):
@@ -42,7 +42,7 @@ class Main:
 				else:
 					self.login_error()
 			except:
-				self.major_error()
+				self.login_error()
 		self.blogs()
 	
 	def blogs(self):

@@ -98,9 +98,10 @@ class Tumblr:
 
 	def keep_relevant(self):
 		for i in range(len(self.conts)):
-			post_text = self.conts[i].text_content()
-			post_parent = post_text.splitlines()
-			post_parent = post_parent[1]
+			post_text = self.conts[i].text_content().splitlines()
+			post_parent = post_text[1]
+			del post_text[1]
+			post_text = "".join(post_text)
 			if "reblogged" in post_parent:
 				if self.username not in post_text:
 					self.add_id(i)

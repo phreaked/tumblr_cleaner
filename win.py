@@ -122,7 +122,7 @@ class MainWindow(QMainWindow):
 
 	def login_error(self):
 		login_error_title = "Login Error"
-		login_error_message = "Invalid login. More than two attempts will trigger captcha. Make sure to disable 2-step authenitcaton."
+		login_error_message = "Invalid login. Beware of captcha and 2-step authentication. If you keep getting this error, login through your browser then restart the program."
 		QMessageBox.information(self, login_error_title, login_error_message)
 
 	def major_error(self):
