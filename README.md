@@ -1,8 +1,8 @@
 ## TumblrCleaner 1.0
 
-- Keep original keeps only the original posts
-- Keep relevant keeps original posts and any posts with your username in it
-- Delete all deletes all posts
+- Keep original: keeps only the original posts
+- Keep relevant: keeps original posts and any posts with your username in it
+- Delete all: deletes all posts
 
 ## Requirements
 
