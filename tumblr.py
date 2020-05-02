@@ -31,7 +31,7 @@ class Tumblr:
 		self.blogs = blogs[6:-1]
 
 	def all_pages(self):
-		self.m.open("https://tumblr.com/blog/{}".format(self.username))
+		self.m.open("https://tumblr.com/blog/{}/activity".format(self.username))
 		blog_html = self.m.response().read()
 		tree = html.fromstring(blog_html)
 		sidebar = tree.find_class("count")
